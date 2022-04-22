@@ -48,5 +48,3 @@ elseif responseCode==1
     model=responseArray(2);
     SN=responseArray(3);
 end
-
-    

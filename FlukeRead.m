@@ -1,4 +1,4 @@
-function measurements = FlukeRead(t,status)
+function [measurements,flukeDataFile,newData] = FlukeRead(t,flukeDataFile,instruments)
 %FlukeRead reads the latest measurement from FLUKE 1586A DMM
 %
 % SYNOPSIS: measurements = FlukeRead(instrument)
@@ -16,12 +16,21 @@ function measurements = FlukeRead(t,status)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if status==0
-    t.writeline('FETCH?')
+
+t.writeline('STAT:OPER?') % query the operation status
+status = dec2bin(double(t.readline));
+t.flush
+if length(status)>4 && status(end-4)=='1'
+    t.writeline('DATA:READ?')
+    measurements = str2double(strsplit(t.readline,','));
+    timestamp = datetime(now,'ConvertFrom','datenum');
+    dataFileTemp = array2timetable(measurements(:)','RowTimes',timestamp);
+    dataFileTemp.Properties.VariableNames=instruments(3,:); %% solve something here
+    flukeDataFile = [flukeDataFile;dataFileTemp];
+    newData=1;
+else
+    measurements = [];
+    newData=0;
 end
 
-if t.NumBytesAvailable>0
-    data = t.readline;
-    data = strsplit(data,',');
-    measurements=str2double(data);
-end
+
