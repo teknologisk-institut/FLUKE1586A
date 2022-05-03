@@ -1,4 +1,4 @@
-function [measurements,flukeDataFile,newData] = FlukeRead(t,flukeDataFile,instruments)
+function [flukeTable] = FlukeRead(t,flukeTable)
 %FlukeRead reads the latest measurement from FLUKE 1586A DMM
 %
 % SYNOPSIS: measurements = FlukeRead(instrument)
@@ -15,22 +15,29 @@ function [measurements,flukeDataFile,newData] = FlukeRead(t,flukeDataFile,instru
 % DATE: 06-Apr-2022
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-t.writeline('STAT:OPER?') % query the operation status
-status = dec2bin(double(t.readline));
-t.flush
-if length(status)>4 && status(end-4)=='1'
-    t.writeline('DATA:READ?')
-    measurements = str2double(strsplit(t.readline,','));
-    timestamp = datetime(now,'ConvertFrom','datenum');
-    dataFileTemp = array2timetable(measurements(:)','RowTimes',timestamp);
-    dataFileTemp.Properties.VariableNames=instruments(3,:); %% solve something here
-    flukeDataFile = [flukeDataFile;dataFileTemp];
-    newData=1;
+timestamp = datetime(now,'ConvertFrom','datenum');
+if minutes(timestamp-flukeTable.Time(end))<10
+    try
+        t.writeline('STAT:OPER?') % query the operation status
+        status = dec2bin(double(t.readline));
+        t.flush
+        if length(status)>4 && status(end-4)=='1'
+            t.writeline('DATA:READ?')
+            pause(0.05);
+            measurements = str2double(strsplit(t.readline,','));
+            dataFileTemp = array2timetable(measurements(:)','RowTimes',timestamp);
+            dataFileTemp.Properties.VariableNames=flukeTable.Properties.VariableNames; %% solve something here
+            flukeTable = [flukeTable;dataFileTemp];
+        end
+    catch
+        disp("wrong output from instrument");
+    end
 else
-    measurements = [];
-    newData=0;
+    flukeAddress = t.Address;
+    flukePort = t.Port;
+    clear t
+    [t,~,~,~] = FlukeInitialize(flukeAddress,flukePort);
+    [~,~] = FlukeSetupInstrument(t,flukeInstruments);
+%     flukeTable=flukeTable;
 end
-
 
