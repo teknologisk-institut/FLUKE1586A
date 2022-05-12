@@ -24,7 +24,11 @@ if minutes(timestamp-flukeTable.Time(end))<10
         if length(status)>4 && status(end-4)=='1'
             t.writeline('DATA:READ?')
             pause(0.05);
-            measurements = str2double(strsplit(t.readline,','));
+            rawData = t.readline;
+            flukeFile=fopen('flukeLog.txt','a'); % write raw data into a log
+            fprintf(flukeFile,'%s \r', rawData);
+            fclose(flukeFile);
+            measurements = str2double(strsplit(rawData,','));
             dataFileTemp = array2timetable(measurements(:)','RowTimes',timestamp);
             dataFileTemp.Properties.VariableNames=flukeTable.Properties.VariableNames; %% solve something here
             flukeTable = [flukeTable;dataFileTemp];
