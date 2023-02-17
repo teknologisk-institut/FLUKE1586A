@@ -34,7 +34,7 @@ if minutes(timestamp-flukeTable.Time(end))<10
             flukeTable = [flukeTable;dataFileTemp];
         end
     catch
-        disp("wrong output from instrument");
+        disp("FLUKE1586A: Wrong output from instrument (FlukeRead)");
     end
 else
     flukeAddress = t.Address;
