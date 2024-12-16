@@ -1,4 +1,4 @@
-function [flukeTable] = FlukeRead(t,flukeTable)
+function [newData, flukeTable] = FlukeRead(t,flukeTable)
 %FlukeRead reads the latest measurement from FLUKE 1586A DMM
 %
 % SYNOPSIS: measurements = FlukeRead(instrument)
@@ -19,8 +19,11 @@ timestamp = datetime(now,'ConvertFrom','datenum');
 if minutes(timestamp-flukeTable.Time(end))<10
     try
         t.writeline('STAT:OPER?') % query the operation status
-        status = dec2bin(double(t.readline));
+        status_sum = double(t.readline)
+        status_reg = dec2bin(status_sum)
+        status = status_reg;
         t.flush
+        newData = 0;
         if length(status)>4 && status(end-4)=='1'
             t.writeline('DATA:READ?')
             pause(0.05);
@@ -32,6 +35,7 @@ if minutes(timestamp-flukeTable.Time(end))<10
             dataFileTemp = array2timetable(measurements(:)','RowTimes',timestamp);
             dataFileTemp.Properties.VariableNames=flukeTable.Properties.VariableNames; %% solve something here
             flukeTable = [flukeTable;dataFileTemp];
+            newData = 1;
         end
     catch
         disp("FLUKE1586A: Wrong output from instrument (FlukeRead)");

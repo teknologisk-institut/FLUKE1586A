@@ -2,23 +2,26 @@ clear variables
 close all
 clc
 
-[flukeInstruments,flukeAddress,flukePort]=FlukeReadSetupFile("C:\Users\peo\Documents\GitHub\FLUKE1586A\");
+[flukeInstruments,flukeAddress,flukePort] = FlukeReadSetupFile("Y:\Personal\EAK\materialefugt\materialefugt\");
 
 flukeTable = FlukeCreateTable(flukeInstruments);
 [t,make,model,SN] = FlukeInitialize(flukeAddress,flukePort);
 [channels, func] = FlukeSetupInstrument(t,flukeInstruments);
 
 i = 0;
+disp('Starting loop')
 while true
     try
-        [measurements,flukeTable,newData] = FlukeRead(t,flukeTable,flukeInstruments);
-        if newData==1
-            i = i+1;
+        [newData, flukeTable] = FlukeRead(t,flukeTable);
+        if newData
+            i=i+1;
         end
         if i>3
             break
         end
-    catch
+    catch exception
+        msgText = getReport(exception);
+        disp(msgText);
         clear t;
         [t,make,model,SN] = FlukeInitialize(flukeAddress,flukePort);
         [channels, func] = FlukeSetupInstrument(t,flukeInstruments);
@@ -26,3 +29,6 @@ while true
     pause(0.1)
 end
 t.writeline('ABOR')
+
+figure(1)
+stackedplot(flukeTable)
